@@ -1,5 +1,6 @@
 import 'package:bloc_interop/blocs/counter_bloc.dart';
 import 'package:bloc_interop/blocs/infra/injector.dart';
+import 'package:bloc_interop/nav/native_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -79,6 +80,14 @@ class CounterPage extends StatelessWidget {
               TextButton(
                 onPressed: () => counterBloc.add(CounterEventReset()),
                 child: const Text("Reset"),
+              ),
+              TextButton(
+                onPressed: () => NativeNavigator.instance()
+                    .navigate("[parameters not implemented]"),
+                style: TextButton.styleFrom(
+                  textStyle: const TextStyle(fontSize: 20),
+                ),
+                child: const Text("GO TO NATIVE PAGE"),
               ),
             ],
           ),

@@ -17,6 +17,12 @@ class CounterEventMultiply extends CounterEvent {
 
 class CounterEventReset extends CounterEvent {}
 
+class _CounterEventSetError extends CounterEvent {
+  String errorMessage;
+
+  _CounterEventSetError(this.errorMessage);
+}
+
 abstract class CounterState {}
 
 class CounterStateNumber extends CounterState {
@@ -59,5 +65,46 @@ class CounterBloc extends InteropBloc<CounterEvent, CounterState> {
           : CounterStateNumber(0));
     });
     on<CounterEventReset>((_, emit) => emit(CounterStateNumber(0)));
+  }
+
+  @override
+  String getBlocName() {
+    return "counter";
+  }
+
+  @override
+  CounterEvent messageToEvent(dynamic message) {
+    // Interpret a message that came from the native bloc adapter.
+    switch (message["type"]) {
+      case "INCREMENT":
+        return CounterEventIncrement.by(message["step"]);
+      case "MULTIPLY":
+        return CounterEventMultiply.by(message["factor"]);
+      case "RESET":
+        return CounterEventReset();
+      default:
+        return _CounterEventSetError(
+            "UNRECOGNIZED MESSAGE: ${message.toString()}");
+    }
+  }
+
+  @override
+  stateToMessage(CounterState state) {
+    if (state is CounterStateNumber) {
+      return <String, dynamic>{
+        "type": "NUMBER",
+        "value": state.value,
+      };
+    } else if (state is CounterStateError) {
+      return <String, dynamic>{
+        "type": "ERROR",
+        "errorMessage": state.errorMessage,
+      };
+    } else {
+      return <String, dynamic>{
+        "type": "ERROR",
+        "errorMessage": "COULD NOT CREATE MESSAGE FROM STATE: $state",
+      };
+    }
   }
 }
