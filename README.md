@@ -1,16 +1,7 @@
 # bloc_interop
 
-A new Flutter project.
+Proof-of-concept for using a Flutter bloc from native Android or iOS code.
 
-## Getting Started
+(Currently works on Android but needs some improvement; coding up the iOS side.)
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Set up this project as you would normally; run with `flutter run`. This is a minimal example for accessing a Flutter bloc's state from native code, as well as receiving state updates.
