@@ -32,6 +32,9 @@ protocol BlocAdapterDelegate: AnyObject {
 class BaseBlocAdapter<D: BlocAdapterDelegate> {
     typealias BlocListener = (D.S) -> Void
     
+    // The name of the method channel must be exactly the same as in the Flutter InteropBloc.
+    // In this project I'm using this prefix plus a name that is unique to every bloc.
+    private let BLOC_CHANNEL_NAME_PREFIX = "br.com.rtakahashi.playground.bloc_interop/BlocChannel/"
     private var _delegate: D
     private var _channel: FlutterMethodChannel
     private var _callbackName: String?
@@ -45,7 +48,7 @@ class BaseBlocAdapter<D: BlocAdapterDelegate> {
     /// obtain the current state from the Flutter bloc right away.
     internal init(_ blocName: String, withDelegate delegate: D, andBinaryMessenger messenger: FlutterBinaryMessenger, andInitialState initialState: D.S) {
         self._delegate = delegate
-        _channel = FlutterMethodChannel(name: "br.com.rtakahashi.playground.bloc_interop/\(blocName)", binaryMessenger: messenger, codec: FlutterJSONMethodCodec())
+        _channel = FlutterMethodChannel(name: "\(BLOC_CHANNEL_NAME_PREFIX)\(blocName)", binaryMessenger: messenger, codec: FlutterJSONMethodCodec())
         _cachedState = initialState
         _listeners = Dictionary<String, BlocListener>()
     }
@@ -125,6 +128,9 @@ class BaseBlocAdapter<D: BlocAdapterDelegate> {
     /// This method is expected to be used only by subclasses of BaseBlocAdapter.
     /// Only those subclasses are expected to know what format that the Flutter bloc
     /// understands.
+    ///
+    /// This sends a Dictionary through the method channel, and we expect the
+    /// Flutter bloc to know how to interpret it.
     func send(message: [String : Any]) {
         _channel.invokeMethod("sendEvent", arguments: message)
     }

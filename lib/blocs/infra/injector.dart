@@ -3,6 +3,10 @@
 
 import 'package:bloc_interop/blocs/counter_bloc.dart';
 
+/// This project doesn't have real dependency injection
+/// anywhere, as it is a minimal example of using blocs
+/// in native code. In a real project, you should use the
+/// DI library of your choice instead of this.
 class Injector {
   CounterBloc counterBloc;
   Injector._() : counterBloc = CounterBloc();

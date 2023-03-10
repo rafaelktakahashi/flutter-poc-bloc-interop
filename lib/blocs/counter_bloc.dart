@@ -1,5 +1,4 @@
 import 'package:bloc_interop/blocs/infra/interop_bloc.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class CounterEvent {}
 
@@ -47,11 +46,14 @@ class CounterStateError extends CounterState {
 
 /// Our counter bloc that extends from our InteropBloc.
 /// The InteropBloc provides extra functionality for automatically making this
-/// bloc usable from the native side, but requires us to implement a few
-/// extra methods.
+/// bloc usable from the native side, but requires the subclass to implement
+/// a few methods.
 class CounterBloc extends InteropBloc<CounterEvent, CounterState> {
-  CounterBloc() : super(CounterStateNumber(0)) {
-    // Register event handlers
+  CounterBloc() : super("counter", CounterStateNumber(0)) {
+    // Register event handlers.
+    // These handlers handle events regardless of whether they were
+    // added by Flutter components or by events coming from native
+    // code.
     on<CounterEventIncrement>((event, emit) {
       var currentState = state;
       emit(currentState is CounterStateNumber
@@ -65,11 +67,6 @@ class CounterBloc extends InteropBloc<CounterEvent, CounterState> {
           : CounterStateNumber(0));
     });
     on<CounterEventReset>((_, emit) => emit(CounterStateNumber(0)));
-  }
-
-  @override
-  String getBlocName() {
-    return "counter";
   }
 
   @override
@@ -90,6 +87,8 @@ class CounterBloc extends InteropBloc<CounterEvent, CounterState> {
 
   @override
   stateToMessage(CounterState state) {
+    // Make a message for the native side, containing this bloc's
+    // current state.
     if (state is CounterStateNumber) {
       return <String, dynamic>{
         "type": "NUMBER",

@@ -1,6 +1,12 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+/// The name of the method channel needs to be exactly the same
+/// as in the native adapters. In this project I'm using this
+/// prefix plus a name that is unique to every bloc.
+const blocChannelNamePrefix =
+    "br.com.rtakahashi.playground.bloc_interop/BlocChannel/";
+
 /// Our own bloc that knows how to interact with the native side through
 /// events and state updates.
 abstract class InteropBloc<E, S> extends Bloc<E, S> {
@@ -8,21 +14,19 @@ abstract class InteropBloc<E, S> extends Bloc<E, S> {
 
   final List<String> _nativeSubscriptions;
 
-  InteropBloc(super.initialState)
+  InteropBloc(String blocName, super.initialState)
       : _nativeSubscriptions = List.empty(growable: true) {
     // Receive events from the native side.
     platform = MethodChannel(
-        "br.com.rtakahashi.playground.bloc_interop/${getBlocName()}",
-        const JSONMethodCodec());
+        "$blocChannelNamePrefix$blocName", const JSONMethodCodec());
     platform.setMethodCallHandler(_handler);
 
-    // If we always send messages to a fixed method, then we'd be wasting calls
-    // when the other side isn't listening.
-    // Also, this way a certain bloc adapter on the native side can receive
-    // messages in multiple methods if it wants.
-    // Just make sure to never subscribe to the same method twice.
+    // If we always sent messages to a fixed method, then we'd be wasting calls
+    // when the other side isn't listening. Flutter blocs may exist without
+    // a corresponding native bloc adapter.
+    // This code is prepared to register multiple callbacks, but in practice
+    // that shouldn't be needed.
     stream.listen((event) {
-      print("SENDING UPDATE to $_nativeSubscriptions");
       for (var subscription in _nativeSubscriptions) {
         platform.invokeMethod(subscription, stateToMessage(event));
       }
@@ -30,16 +34,13 @@ abstract class InteropBloc<E, S> extends Bloc<E, S> {
   }
 
   Future<dynamic> _handler(MethodCall methodCall) async {
-    print("RECEIVING EVENT");
-    print(methodCall.method);
-    print(methodCall.arguments);
     switch (methodCall.method) {
       case 'sendEvent':
-        return receiveMessage(methodCall.arguments);
+        return _receiveMessage(methodCall.arguments);
       case 'registerCallback':
-        return registerCallback(methodCall.arguments as String);
+        return _registerNativeCallback(methodCall.arguments as String);
       case 'unregisterCallback':
-        return unregisterCallback(methodCall.arguments as String);
+        return _unregisterNativeCallback(methodCall.arguments as String);
       case 'getCurrentState':
         return stateToMessage(state);
       default:
@@ -53,20 +54,22 @@ abstract class InteropBloc<E, S> extends Bloc<E, S> {
 
   /// Must be overridden to produce a message that the native side will
   /// undestand, containing the state.
+  /// Each native bloc adapter is responsible for interpreting the messages
+  /// that the corresponding Flutter bloc sends.
   dynamic stateToMessage(S state);
 
-  String getBlocName();
-
-  void registerCallback(String callback) {
-    print("REGISTERING CALLBACK $callback");
+  void _registerNativeCallback(String callback) {
     _nativeSubscriptions.add(callback);
   }
 
-  void unregisterCallback(String callback) {
+  void _unregisterNativeCallback(String callback) {
     _nativeSubscriptions.remove(callback);
   }
 
-  void receiveMessage(dynamic message) {
+  /// This receives messages from the native side and turns them to events to
+  /// add them to this bloc. Once added, the events are handled by the bloc
+  /// like any other event.
+  void _receiveMessage(dynamic message) {
     // The message parameter is something that came from the other side of the
     // channel. We turn it into an event and add it to this bloc.
     E event = messageToEvent(message);

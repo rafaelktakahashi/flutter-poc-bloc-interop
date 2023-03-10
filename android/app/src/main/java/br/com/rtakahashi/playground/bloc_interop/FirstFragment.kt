@@ -45,11 +45,6 @@ class FirstFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // This is a complication that still needs to be solved; much code in the adapter's
-        // initialization relies on the flutter code having already been initialized, so it doesn't
-        // work if we place certain things in the adapter's init method.
-        _counterBlocAdapter.initialize();
-
         binding.buttonAddOne.setOnClickListener {
             _counterBlocAdapter.incrementBy(1);
         };
